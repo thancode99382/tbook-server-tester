@@ -56,9 +56,11 @@ const GetBookAllService = async () => {
   }
 }
 
-const GetBookOnlyService = async() => {
+const GetBookOnlyService = async(id) => {
   try {
-    const getBookOnly = await db.Book.findAll()
+    const getBookOnly = await db.Book.findOne({ where: { id } ,
+      include: { model: db.Chapter, as: 'chapters' }  
+    });
     return {
       EM: "get book only successfully",
       DT: getBookOnly

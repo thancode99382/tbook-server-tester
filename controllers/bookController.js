@@ -50,8 +50,12 @@ const getBookAll = async (req, res) => {
 }
 
 const getBookOnly = async (req, res) => {
+
+const id = req.params.id
+
+
   try {
-    const result = await GetBookOnlyService()
+    const result = await GetBookOnlyService(id)
     return res.json({
       EM: "oke",
       DT: result
@@ -65,18 +69,20 @@ const getBookOnly = async (req, res) => {
 }
 
 const deleteBook = async (req, res) => {
-  console.log(req.body.bookId);
-  const bookId = req.body.bookId
+  console.log(req.params.id); // Debug xem ID nhận đúng chưa
+  const bookId = req.params.id; // Lấy đúng param từ URL
+
   try {
-    const result = await DeleteBookService(bookId)
+    const result = await DeleteBookService(bookId);
     return res.json({
       EM: result.EM,
       DT: result.DT
-    })
+    });
   } catch (error) {
-    return res.status(500).json({error: error})
+    console.error("Error in deleteBook:", error);
+    return res.status(500).json({ error: error.message });
   }
-}
+};
 
 const updateBook = async (req, res) => {
   const bookId = req.body.bookId
