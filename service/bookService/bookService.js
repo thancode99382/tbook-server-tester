@@ -62,7 +62,7 @@ const GetBookOnlyService = async(id) => {
       include: { model: db.Chapter, as: 'chapters' }  
     });
     return {
-      EM: "get book only successfully",
+        EM: "get book only successfully",
       DT: getBookOnly
     }
   } catch (getBookOnlyError) {
