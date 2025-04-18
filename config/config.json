@@ -14,8 +14,8 @@
     "dialect": "mysql"
   },
   "production": {
-    "username": "root",
-    "password": "",
+    "username": "dzajrljzvh",
+    "password": "Ykatgh8gi5w7pFl$",
     "database": "tbookvd-api-database",
     "host": "tbookvd-api-server.mysql.database.azure.com",
     "dialect": "mysql",
