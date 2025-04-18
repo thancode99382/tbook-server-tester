@@ -9,7 +9,10 @@ const CreateBookAndChapter = async (book, listChapter, bookUrl = null) => {
   try {
     newbook = await db.Book.create(bookData)
   } catch (createBookError) {
-    throw new Error(createBookError)
+    return {
+      EM: "Failed to create book",
+      DT: createBookError.message
+    }
   }
   
   try {
@@ -37,8 +40,16 @@ const CreateBookAndChapter = async (book, listChapter, bookUrl = null) => {
         await db.Chapter.create(chapterData);
       }
     }
+    
+    return {
+      EM: "Book and chapters created successfully",
+      DT: newbook
+    }
   } catch (createChapterError) {
-    throw new Error(createChapterError)
+    return {
+      EM: "Failed to create chapters",
+      DT: createChapterError.message
+    }
   }
 }
 
@@ -48,25 +59,40 @@ const GetBookAllService = async () => {
       include: { model: db.Chapter, as: 'chapters' }  
     });
     return {
-      EM: "get all successfully",
+      EM: "Books retrieved successfully",
       DT: getBookAll
     }
   } catch (getBookAllError) {
-    throw new Error(getBookAllError)
+    return {
+      EM: "Failed to retrieve books",
+      DT: getBookAllError.message
+    }
   }
 }
 
 const GetBookOnlyService = async(id) => {
   try {
-    const getBookOnly = await db.Book.findOne({ where: { id } ,
+    const getBookOnly = await db.Book.findOne({ 
+      where: { id },
       include: { model: db.Chapter, as: 'chapters' }  
     });
+    
+    if (!getBookOnly) {
+      return {
+        EM: "Book not found",
+        DT: null
+      }
+    }
+    
     return {
-        EM: "get book only successfully",
+      EM: "Book retrieved successfully",
       DT: getBookOnly
     }
   } catch (getBookOnlyError) {
-    throw new Error(getBookOnlyError)
+    return {
+      EM: "Failed to retrieve book",
+      DT: getBookOnlyError.message
+    }
   }
 }
 
@@ -75,12 +101,16 @@ const DeleteBookService = async (bookId) => {
     const deleteBook = await db.Book.destroy({
       where: { id: bookId },
     });
+    
     return {
-      EM: "oke",
+      EM: deleteBook > 0 ? "Book deleted successfully" : "Book not found",
       DT: deleteBook
     }    
   } catch (deleteBookError) {
-    throw new Error(deleteBookError)
+    return {
+      EM: "Failed to delete book",
+      DT: deleteBookError.message
+    }
   }
 }
 
@@ -89,19 +119,25 @@ const UpdateBookService = async (bookId, newTitle) => {
     const newbook = await db.Book.findOne({
       where: {id: bookId}
     })
-    if (!newbook) throw new Error("Not Found Book")
+    
+    if (!newbook) {
+      return {
+        EM: "Book not found",
+        DT: null
+      }
+    }
 
     newbook.title = newTitle
     await newbook.save()
 
     return {
-      ME: "Oke",
+      EM: "Book updated successfully",
       DT: newbook
     }
   } catch (updateBookError) {
     return {
-      ME: "Err",
-      DT: updateBookError
+      EM: "Failed to update book",
+      DT: updateBookError.message
     }
   }
 }

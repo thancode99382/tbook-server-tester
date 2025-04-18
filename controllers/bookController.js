@@ -5,65 +5,108 @@ const { CreateBookAndChapter, GetBookAllService, GetBookOnlyService, DeleteBookS
 
 const createBook = async (req, res) => {
   try {
-    console.log("File received:", req.file);
     console.log("Book data received:", req.body.bookdata);
     console.log("Chapters received:", req.body.chapters);
     
-    // Parse the JSON data
-    const bookData = JSON.parse(req.body.bookdata);
-    const listChapter = JSON.parse(req.body.chapters);
-    
-    let imageUrl = null;
-    
-    // Check if a file was uploaded
-    if (req.file) {
-      // Upload image to cloudinary
-      try {
-        const uploadImage = await cloudinary.uploader.upload(req.file.path, { folder: 'uploads' });
-        imageUrl = uploadImage.secure_url;
-        
-        // Clean up the temporary file after upload
-        fs.unlinkSync(req.file.path);
-      } catch (error) {
-        console.error("Cloudinary upload error:", error);
-        return res.status(500).json({ message: "Failed to upload book image", error: error.message });
-      }
+    // Validate required fields
+    if (!req.body.bookdata || !req.body.chapters) {
+      return res.status(400).json({
+        EM: "Missing required book data or chapters",
+        DT: null
+      });
     }
     
-    // Create book and chapters in the database with the image URL (or null if no image)
-    await CreateBookAndChapter(bookData, listChapter, imageUrl);
+    // Process the JSON data
+    let bookData, listChapter;
+    
+    // Handle both string JSON and direct JSON object formats
+    try {
+      // Check if data is already parsed or needs parsing
+      bookData = typeof req.body.bookdata === 'string' ? JSON.parse(req.body.bookdata) : req.body.bookdata;
+      listChapter = typeof req.body.chapters === 'string' ? JSON.parse(req.body.chapters) : req.body.chapters;
+    } catch (parseError) {
+      console.error("JSON parsing error:", parseError);
+      return res.status(400).json({ 
+        EM: "Invalid JSON format", 
+        DT: null 
+      });
+    }
+    
+    // Validate book data
+    if (!bookData.title) {
+      return res.status(400).json({
+        EM: "Book title is required",
+        DT: null
+      });
+    }
+    
+    // Set image URL to a default value - in this case just "okok"
+    // You can modify this to handle actual image uploads if needed
+    const imageUrl = "okok";
 
-    return res.status(200).json({ message: "Book created successfully" });
+    // Create book and chapters in the database
+    const result = await CreateBookAndChapter(bookData, listChapter, imageUrl);
+    
+    // Handle different error cases from the service
+    if (result.EM === "Failed to create book") {
+      return res.status(400).json({
+        EM: result.EM,
+        DT: result.DT
+      });
+    }
+    
+    if (result.EM === "Failed to create chapters") {
+      return res.status(400).json({
+        EM: result.EM,
+        DT: result.DT
+      });
+    }
+    
+    // Success case
+    return res.status(201).json({ 
+      EM: result.EM,
+      DT: result.DT
+    });
   } catch (error) {
     console.error("Error in createBook:", error);
-    return res.status(500).json({ message: "Failed to create book", error: error.message });
+    return res.status(500).json({ 
+      EM: "Server error", 
+      DT: error.message 
+    });
   }
 }
 
 const getBookAll = async (req, res) => {
   try {
     const result = await GetBookAllService()
-    return res.json({EM: result.EM, DT: result.DT})
+    return res.status(200).json({EM: result.EM, DT: result.DT})
   } catch (error) {
-    return res.status(500).json({EM: error})
+    return res.status(500).json({
+      EM: "Server error", 
+      DT: error.message
+    })
   }
 }
 
 const getBookOnly = async (req, res) => {
-
-const id = req.params.id
-
+  const id = req.params.id
 
   try {
     const result = await GetBookOnlyService(id)
-    return res.json({
-      EM: "oke",
-      DT: result
+    if (!result.DT) {
+      return res.status(404).json({
+        EM: "Book not found",
+        DT: null
+      })
+    }
+    return res.status(200).json({
+      EM: result.EM,
+      DT: result.DT
     })
   } catch (error) {
     return res.status(500).json({
-      EM: "error",
-      DT: error
+      EM: "Server error",
+      DT: error.message
     })
   }
 }
@@ -74,24 +117,55 @@ const deleteBook = async (req, res) => {
 
   try {
     const result = await DeleteBookService(bookId);
-    return res.json({
-      EM: result.EM,
+    if (result.DT === 0) {
+      return res.status(404).json({
+        EM: "Book not found",
+        DT: result.DT
+      });
+    }
+    return res.status(200).json({
+      EM: "Book deleted successfully",
       DT: result.DT
     });
   } catch (error) {
     console.error("Error in deleteBook:", error);
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ 
+      EM: "Server error", 
+      DT: error.message 
+    });
   }
-};
+}
 
 const updateBook = async (req, res) => {
   const bookId = req.body.bookId
   const newTitle = req.body.title
+  
+  if (!bookId || !newTitle) {
+    return res.status(400).json({ 
+      EM: "Missing required fields", 
+      DT: null 
+    });
+  }
+  
   try {
     const processUpdate = await UpdateBookService(bookId, newTitle)
-    return res.json({ ME: processUpdate.ME, DT: processUpdate.DT })
+    
+    if (processUpdate.EM === "Book not found") {
+      return res.status(404).json({ 
+        EM: processUpdate.EM, 
+        DT: null 
+      });
+    }
+    
+    return res.status(200).json({ 
+      EM: processUpdate.EM, 
+      DT: processUpdate.DT 
+    });
   } catch (updateBookError) {
-    return res.status(500).json({ ME: "Error", DT: updateBookError })
+    return res.status(500).json({ 
+      EM: "Server error", 
+      DT: updateBookError.message 
+    });
   }
 }
 

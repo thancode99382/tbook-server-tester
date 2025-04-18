@@ -16,42 +16,67 @@ const checkPassword = (inputPassword , hashPassword) =>{
     return bcrypt.compareSync(inputPassword,hashPassword)
 }
 
-const registerNewUser = async (UserData) =>{
+const registerNewUser = async (UserData) => {
     try {
+        // Check if user already exists
+        const existingUser = await db.User.findOne({
+            where: {
+                email: UserData.email
+            }
+        });
+
+        if (existingUser) {
+            return {
+                EM: "User already exists",
+                DT: null
+            };
+        }
+
+        // Hash password
         const hashPassword = hashUserPassword(UserData.password);
         console.log("mã hoá password thành công");
         
+        // Create new user
         const newUser = await db.User.create({
             username: UserData.username,
             email: UserData.email,
             password: hashPassword,
-        })
+        });
         console.log("Thêm users vào database thành công");
 
-        let roles = UserData.roles || 'USER'
+        // Assign roles
+        let roles = UserData.roles || 'USER';
         const roleRecords = await db.Role.findAll({
             where: {
                 name: roles,
             }
-        })
+        });
+        
         console.log("Lấy danh sách roles thành công");
-        if (!roles) {
-            throw new error("Not found roles")
-        }else {
-            newUser.addRoles(roleRecords)
-
-        return {
-            EM:'Create user successfully',
-          }
+        if (!roleRecords || roleRecords.length === 0) {
+            return {
+                EM: "Role not found",
+                DT: null
+            };
+        } else {
+            await newUser.addRoles(roleRecords);
+            return {
+                EM: "User registered successfully",
+                DT: {
+                    id: newUser.id,
+                    username: newUser.username,
+                    email: newUser.email,
+                    roles: roles
+                }
+            };
         }
     } catch (error) {
+        console.error("Registration error:", error);
         return {
-            EM:`Create user successfully ${error}`,
-        }
-        
+            EM: `Registration failed: ${error.message}`,
+            DT: null
+        };
     }
-
-
 }
 
 const loginService = async (UserData) =>{
@@ -60,7 +85,14 @@ const loginService = async (UserData) =>{
             where :{
                 email:UserData.email
             }
-        })
+        });
+
+        if(!user) {
+            return {
+                EM: "User does not exist",
+                DT: null
+            };
+        }
 
         const roleOfUser = await db.User.findOne( {
             where :{
@@ -73,42 +105,36 @@ const loginService = async (UserData) =>{
           });
           const userRoles = roleOfUser.Roles.map(role => role.dataValues.name);
         
-        if(user){
-            const isCorrectPassword = checkPassword(UserData.password , user.password);
-            if(isCorrectPassword === true){
-                const payload  = {
+        const isCorrectPassword = checkPassword(UserData.password, user.password);
+        if(isCorrectPassword === true){
+            const payload  = {
+                email:user.email,
+                username: user.username,
+                userRoles                      
+            }
+            const token = createJWT(payload);
+           
+            return {
+                EM: "login successfully",
+                DT:{
+                    access_token: token,
                     email:user.email,
-                    username: user.username,
-                    userRoles                      
+                    usename:user.username,
+                    userRoles  
                 }
-                const token = createJWT(payload);
-               
-                return {
-                    EM: "login successfully",
-                    DT:{
-                        access_token: token ,
-                        email:user.email,
-                        usename:user.username,
-                        userRoles  
-                    }
-                }
-
+            }
+        } else {
+            return {
+                EM: "wrong password",
+                DT: null
             }
         }
-
-
-        return {
-            EM:'login user successfully',
-            
-          }
     } catch (error) {
         return {
-            EM:'login user failure',
-            
-          };
+            EM: "Server error during login",
+            DT: null
+        };
     }
-
-
 }
 
 const CheckAdminService = async (token) => {

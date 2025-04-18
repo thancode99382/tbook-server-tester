@@ -20,7 +20,7 @@ const apiRoutes = (app) => {
   router.get("/books/:id", getBookOnly)
   router.get("/check/admin", checkAdmin)
 
-  router.post("/book/create", isAdmin, upload.single("image"), createBook)
+  router.post("/book/create", isAdmin, createBook)
   router.post("/chapter/create", isAdmin, createChapter)
 
   router.put("/book/update", isAdmin, updateBook)
