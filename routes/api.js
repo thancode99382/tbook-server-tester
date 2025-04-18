@@ -17,7 +17,7 @@ const apiRoutes = (app) => {
   //books & chapter
   router.get("/user/read", isAdmin,readFunc);
   router.get("/books/all",getBookAll)
-  router.get("/books/only", isUser, getBookOnly)
+  router.get("/books/:id", getBookOnly)
   router.get("/check/admin", checkAdmin)
 
   router.post("/book/create", isAdmin, upload.single("image"), createBook)
@@ -26,7 +26,7 @@ const apiRoutes = (app) => {
   router.put("/book/update", isAdmin, updateBook)
   router.put("/chapter/update", isAdmin, updateChapter)
 
-  router.delete("/book/delete", isAdmin, deleteBook)
+  router.delete("/book/delete/:id", isAdmin, deleteBook);
   router.delete("/chapter/delete", isAdmin, deleteChapter)
 
   return app.use("/api/v1", router);
