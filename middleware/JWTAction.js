@@ -12,6 +12,7 @@ const createJWT = (payload) => {
   } catch (error) {
     console.log(error);
   }
+  console.log(token);
   return token;
 };
 
