@@ -6,7 +6,6 @@ var logger = require('morgan');
 var {apiRoutes} = require('./routes')
 const cors = require('cors')
 require('dotenv').config();
-const port = process.env.PORT || 8000;
 
 var app = express();
 
@@ -24,10 +23,6 @@ apiRoutes(app);
 
 app.use(function(req, res, next) {
   next(createError(404));
-});
-
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
 });
 
 module.exports = app;
