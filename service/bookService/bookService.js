@@ -53,20 +53,25 @@ const CreateBookAndChapter = async (book, listChapter, bookUrl = null) => {
   }
 }
 
-const GetBookAllService = async () => {
+const GetBookAllService = async (page, limit) => {
   try {
-    const getBookAll = await db.Book.findAll({ 
-      include: { model: db.Chapter, as: 'chapters' }  
+    const offset = (page - 1) * limit;
+    const { count, rows } = await db.Book.findAndCountAll({
+      include: { model: db.Chapter, as: 'chapters' },
+      limit: limit,
+      offset: offset,
+      distinct: true
     });
+    console.log(count);
+    
     return {
-      EM: "Books retrieved successfully",
-      DT: getBookAll
+      EM: "Get all books successfully", 
+      DT: rows,
+      totalCount: count,  // Tổng số sách để kiểm tra có còn trang tiếp theo hay không
+      totalPages: Math.ceil(count / limit) // Tổng số trang
     }
   } catch (getBookAllError) {
-    return {
-      EM: "Failed to retrieve books",
-      DT: getBookAllError.message
-    }
+    throw new Error(getBookAllError)
   }
 }
 

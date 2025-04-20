@@ -77,14 +77,14 @@ const createBook = async (req, res) => {
 }
 
 const getBookAll = async (req, res) => {
+  console.log("oke");
   try {
-    const result = await GetBookAllService()
-    return res.status(200).json({EM: result.EM, DT: result.DT})
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const result = await GetBookAllService(page, limit)
+    return res.json({EM: result.EM, DT: result.DT, totalPages: result.totalPages})
   } catch (error) {
-    return res.status(500).json({
-      EM: "Server error", 
-      DT: error.message
-    })
+    return res.status(500).json({EM: error})
   }
 }
 
